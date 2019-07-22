@@ -35,10 +35,10 @@ int main(int argc, char const *argv[])
         n_localizations += n_localizations_per_particle[i];
 
     // output
-    double * transformed_coordinates_x = (double *)malloc(n_localizations * sizeof(double));
-    double * transformed_coordinates_y = (double *)malloc(n_localizations * sizeof(double));
-    double * transformed_coordinates_z = (double *)malloc(n_localizations * sizeof(double));
-	double * transformation_parameters = (double *)malloc(n_particles * 12 * sizeof(double));
+    double * transformed_coordinates_x = (double *)malloc(n_localizations * (n_iterations_onetoall + 1) * sizeof(double));
+    double * transformed_coordinates_y = (double *)malloc(n_localizations * (n_iterations_onetoall + 1) * sizeof(double));
+    double * transformed_coordinates_z = (double *)malloc(n_localizations * (n_iterations_onetoall + 1) * sizeof(double));
+	double * transformation_parameters = (double *)malloc(n_particles * 12 * (n_iterations_onetoall + 1) * sizeof(double));
 
     // run
     fuse_particles_3d(

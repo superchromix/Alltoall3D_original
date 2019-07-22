@@ -203,7 +203,7 @@ fprintf([' ' num2str(toc(t)) ' s\n']);
 %% applying the absolute registration parameters to particles
 pprint('coordinate transformation ',45);
 t = tic;
-transformed_coordinates = zeros(sum(n_localizations_per_particle),3);
+transformed_coordinates = zeros(sum(n_localizations_per_particle),3,n_iterations_one2all+1);
 for i=1:n_particles  
     
     indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
@@ -222,7 +222,7 @@ for i=1:n_particles
     % copy transformed coordinates
     transformed_particles{1,i}.points = transformed_coordinates_ptc.Location;
     transformed_particles{1,i}.sigma = [precision_xy(indices), precision_z(indices)];
-    transformed_coordinates(indices,:) = transformed_coordinates_ptc.Location;
+    transformed_coordinates(indices,:,1) = transformed_coordinates_ptc.Location;
 end
 progress_bar(1,1);
 fprintf([' ' num2str(toc(t)) ' s\n']);
@@ -230,19 +230,21 @@ fprintf([' ' num2str(toc(t)) ' s\n']);
 %% performing the one2all registration
 pprint('one2all registration ',45);
 t = tic;
-tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_ids == averaging_channel_id,:), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
-transformed_coordinates(channel_ids == averaging_channel_id,:) = tc{end};
+tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_ids == averaging_channel_id,:,1), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
+transformed_coordinates(channel_ids == averaging_channel_id,:,:) = reshape(cell2mat(tc),[],3,n_iterations_one2all+1);
 fprintf([' ' num2str(toc(t)) ' s\n']);
 
 %% calculationg final transformation parameters
-for i = 1:n_particles
-    
-    indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-    indices = indices(channel_ids(indices) == averaging_channel_id);
-        
-    transformation_parameters((i-1)*12+1:(i-1)*12+12,1) = get_final_transform_params(...
-        transformed_coordinates(indices,:),...
-        [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)]);
+for j = 1:n_iterations_one2all+1
+    for i = 1:n_particles
+
+        indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
+        indices = indices(channel_ids(indices) == averaging_channel_id);
+
+        transformation_parameters((i-1)*12+1:(i-1)*12+12,j) = get_final_transform_params(...
+            transformed_coordinates(indices,:,j),...
+            [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)]);
+    end
 end
 
 %% transforming remaining channels
@@ -254,20 +256,22 @@ for ch = 0:max(channel_ids)
     
     filter_channel = channel_ids == ch;
     
-    for i = 1:n_particles
-        tp.rot = reshape(transformation_parameters((i-1)*12+1:(i-1)*12+9),3,3);
-        tp.shift = transformation_parameters((i-1)*12+10:(i-1)*12+12)';
-        
-        indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-        indices = indices(filter_channel(indices));
-        
-        transformed_coordinates(indices,:) = transform_coordinates([coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)], tp.rot, tp.shift);
+    for iter = 1:n_iterations_one2all+1
+        for i = 1:n_particles
+            tp.rot = reshape(transformation_parameters((i-1)*12+1:(i-1)*12+9,iter),3,3);
+            tp.shift = transformation_parameters((i-1)*12+10:(i-1)*12+12,iter)';
+
+            indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
+            indices = indices(filter_channel(indices));
+
+            transformed_coordinates(indices,:,iter) = transform_coordinates([coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)], tp.rot, tp.shift);
+        end
     end
 end
 
 %% setting output arguments holding transformed coordinates
-transformed_coordinates_x = transformed_coordinates(:,1);
-transformed_coordinates_y = transformed_coordinates(:,2);
-transformed_coordinates_z = transformed_coordinates(:,3);
+transformed_coordinates_x = squeeze(transformed_coordinates(:,1,:));
+transformed_coordinates_y = squeeze(transformed_coordinates(:,2,:));
+transformed_coordinates_z = squeeze(transformed_coordinates(:,3,:));
 
 end

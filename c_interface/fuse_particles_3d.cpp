@@ -66,6 +66,8 @@ int fuse_particles_3d_(int argc, const char **argv)
     for (int i = 0; i < n_particles; i++)
         n_localizations += n_localizations_per_particle[i];
 
+    size_t const n_localizations_total = n_localizations * (n_iterations_onetoall + 1);
+
     // input
     mxArray * mx_n_particles = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
     mxArray * mx_n_localizations_per_particle = mxCreateNumericMatrix(n_particles, 1, mxINT32_CLASS, mxREAL);
@@ -148,10 +150,10 @@ int fuse_particles_3d_(int argc, const char **argv)
         return -3;
     }
 
-    memcpy(transformed_coordinates_x, mxGetPr(mx_transformed_coordinates_x), n_localizations * sizeof(double));
-    memcpy(transformed_coordinates_y, mxGetPr(mx_transformed_coordinates_y), n_localizations * sizeof(double));
-    memcpy(transformed_coordinates_z, mxGetPr(mx_transformed_coordinates_z), n_localizations * sizeof(double));
-    memcpy(transformation_parameters, mxGetPr(mx_transformation_parameters), 12 * n_particles * sizeof(double));    
+    memcpy(transformed_coordinates_x, mxGetPr(mx_transformed_coordinates_x), n_localizations_total * sizeof(double));
+    memcpy(transformed_coordinates_y, mxGetPr(mx_transformed_coordinates_y), n_localizations_total * sizeof(double));
+    memcpy(transformed_coordinates_z, mxGetPr(mx_transformed_coordinates_z), n_localizations_total * sizeof(double));
+    memcpy(transformation_parameters, mxGetPr(mx_transformation_parameters), 12 * n_particles * (n_iterations_onetoall + 1) * sizeof(double));    
 
     // mcc_fuse_particles_3dTerminate();
 
