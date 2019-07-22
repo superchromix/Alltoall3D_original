@@ -96,8 +96,10 @@ end
 
 %% setting indicies of the first localization of each particle
 particle_beginnings = ones(n_particles,1);
+particle_endings(n_particles) = numel(coordinates_x);
 for i = 2:n_particles
     particle_beginnings(i) = particle_beginnings(i-1) + n_localizations_per_particle(i-1);
+    particle_endings(i-1) = particle_beginnings(i)-1;
 end
 
 %% starting parallel pool
@@ -106,27 +108,34 @@ if ~(pp.Connected)
     parpool();
 end
 
+%% setting channel filter
+channel_filter = channel_ids == averaging_channel_id;
+
 %% performing the all2all registration
 pprint('all2all registration ',45)
 t = tic;
+coordinates = [coordinates_x, coordinates_y, coordinates_z];
+precision = [precision_xy, precision_z];
 all2all_matrix = cell(n_particles-1,n_particles);
 particle_begin_i = 1;
+coordinates_j = cell(n_particles,1);
+precision_j = cell(n_particles,1);
 for i=1:n_particles-1
     
-    indices_i = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-    indices_i = indices_i(channel_ids(indices_i) == averaging_channel_id);
-    coordinates_i = [coordinates_x(indices_i), coordinates_y(indices_i), coordinates_z(indices_i)];
-    precision_i = [precision_xy(indices_i), precision_z(indices_i)];
+    indices_i = particle_beginnings(i):particle_endings(i);
+    indices_i = indices_i(channel_filter(indices_i));
+    coordinates_i = coordinates(indices_i,:);
+    precision_i = precision(indices_i,:);
+    
+    for j=i+1:n_particles
+        indices_j = particle_beginnings(j):particle_endings(j);
+        indices_j = indices_j(channel_filter(indices_j));
+        coordinates_j{j} = coordinates(indices_j,:);
+        precision_j{j} = precision(indices_j,:);
+    end
     
     parfor j=i+1:n_particles
-        
-        indices_j = particle_beginnings(j):particle_beginnings(j)+n_localizations_per_particle(j)-1;
-        indices_j = indices_j(channel_ids(indices_j) == averaging_channel_id);
-        coordinates_j = [coordinates_x(indices_j), coordinates_y(indices_j), coordinates_z(indices_j)];
-        precision_j = [precision_xy(indices_j), precision_z(indices_j)];
-        
-        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j, precision_i, precision_j, n_iterations_all2all, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
-        
+        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j{j}, precision_i, precision_j{j}, n_iterations_all2all, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
         all2all_matrix{i,j}.ids = [i; j];
     end
     
@@ -184,11 +193,11 @@ end
 pprint('coordinate transformation ',45);
 t = tic;
 transformed_coordinates = zeros(sum(n_localizations_per_particle),3,n_iterations_one2all+1);
+transformed_particles = cell(1,n_particles);
 for i=1:n_particles  
     
-    indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-    indices = indices(channel_ids(indices) == averaging_channel_id);
-    coordinates = [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)];
+    indices = particle_beginnings(i):particle_endings(i);
+    indices = indices(channel_filter(indices));
     
     estA = eye(4);
     estA(1:3,1:3) = Mest(1:3,1:3,i); 
@@ -196,12 +205,12 @@ for i=1:n_particles
     estTform = affine3d(estA);
     
     % transform coordinates
-    coordinates_ptc = pointCloud(coordinates);
+    coordinates_ptc = pointCloud(coordinates(indices,:));
     transformed_coordinates_ptc = pctransform2(coordinates_ptc, invert(estTform));
     
     % copy transformed coordinates
-    transformed_particles{1,i}.points = transformed_coordinates_ptc.Location;
-    transformed_particles{1,i}.sigma = [precision_xy(indices), precision_z(indices)];
+    transformed_particles{i}.points = transformed_coordinates_ptc.Location;
+    transformed_particles{i}.sigma = [precision_xy(indices), precision_z(indices)];
     transformed_coordinates(indices,:,1) = transformed_coordinates_ptc.Location;
 end
 progress_bar(1,1);
@@ -210,42 +219,33 @@ fprintf([' ' num2str(toc(t)) ' s\n']);
 %% performing the one2all registration
 pprint('one2all registration ',45);
 t = tic;
-tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_ids == averaging_channel_id,:,1), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
-transformed_coordinates(channel_ids == averaging_channel_id,:,:) = reshape(cell2mat(tc),[],3,n_iterations_one2all+1);
+tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_filter,:,1), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
+transformed_coordinates(channel_filter,:,:) = reshape(cell2mat(tc),[],3,n_iterations_one2all+1);
 fprintf([' ' num2str(toc(t)) ' s\n']);
 
 %% calculationg final transformation parameters
+transformation_parameters = zeros(4,4,n_particles,n_iterations_one2all+1);
 for j = 1:n_iterations_one2all+1
     for i = 1:n_particles
 
-        indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-        indices = indices(channel_ids(indices) == averaging_channel_id);
+        indices = particle_beginnings(i):particle_endings(i);
+        indices = indices(channel_filter(indices));
 
         transformation_parameters(:,:,i,j) = get_final_transform_params(...
-            transformed_coordinates(indices,:,j),...
-            [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)]);
+            transformed_coordinates(indices,:,j), coordinates(indices,:));
     end
 end
 
 %% transforming remaining channels
-for ch = 0:max(channel_ids)
-    
-    if ch == averaging_channel_id
-        continue;
-    end
-    
-    filter_channel = channel_ids == ch;
-    
-    for iter = 1:n_iterations_one2all+1
-        for i = 1:n_particles
-            tp.rot = transformation_parameters(1:3,1:3,i,iter);
-            tp.shift = transformation_parameters(4,1:3,i,iter);
+for iter = 1:n_iterations_one2all+1
+    for i = 1:n_particles
+        tp.rot = transformation_parameters(1:3,1:3,i,iter);
+        tp.shift = transformation_parameters(4,1:3,i,iter);
 
-            indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
-            indices = indices(filter_channel(indices));
+        indices = particle_beginnings(i):particle_endings(i);
+        indices = indices(~channel_filter(indices));
 
-            transformed_coordinates(indices,:,iter) =  [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)] * tp.rot + tp.shift;
-        end
+        transformed_coordinates(indices,:,iter) =  coordinates(indices,:) * tp.rot + tp.shift;
     end
 end
 
