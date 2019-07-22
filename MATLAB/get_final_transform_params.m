@@ -9,7 +9,9 @@ function parameters = get_final_transform_params(transformed_coordinates, coordi
     'reflection', false);
 p.c = p.c(1,:);
 
-parameters = [p.T(:); p.c(:)];
+parameters = eye(4);
+parameters(1:3,1:3) = p.T;
+parameters(4,1:3) = p.c;
 
 %
 % c = transform{i}.c; % c — Translation component

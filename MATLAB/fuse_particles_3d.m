@@ -243,7 +243,7 @@ for j = 1:n_iterations_one2all+1
         indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
         indices = indices(channel_ids(indices) == averaging_channel_id);
 
-        transformation_parameters((i-1)*12+1:(i-1)*12+12,j) = get_final_transform_params(...
+        transformation_parameters(:,:,i,j) = get_final_transform_params(...
             transformed_coordinates(indices,:,j),...
             [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)]);
     end
@@ -260,13 +260,13 @@ for ch = 0:max(channel_ids)
     
     for iter = 1:n_iterations_one2all+1
         for i = 1:n_particles
-            tp.rot = reshape(transformation_parameters((i-1)*12+1:(i-1)*12+9,iter),3,3);
-            tp.shift = transformation_parameters((i-1)*12+10:(i-1)*12+12,iter)';
+            tp.rot = transformation_parameters(1:3,1:3,i,iter);
+            tp.shift = transformation_parameters(4,1:3,i,iter);
 
             indices = particle_beginnings(i):particle_beginnings(i)+n_localizations_per_particle(i)-1;
             indices = indices(filter_channel(indices));
 
-            transformed_coordinates(indices,:,iter) = transform_coordinates([coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)], tp.rot, tp.shift);
+            transformed_coordinates(indices,:,iter) =  [coordinates_x(indices), coordinates_y(indices), coordinates_z(indices)] * tp.rot + tp.shift;
         end
     end
 end

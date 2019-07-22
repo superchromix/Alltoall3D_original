@@ -153,7 +153,7 @@ int fuse_particles_3d_(int argc, const char **argv)
     memcpy(transformed_coordinates_x, mxGetPr(mx_transformed_coordinates_x), n_localizations_total * sizeof(double));
     memcpy(transformed_coordinates_y, mxGetPr(mx_transformed_coordinates_y), n_localizations_total * sizeof(double));
     memcpy(transformed_coordinates_z, mxGetPr(mx_transformed_coordinates_z), n_localizations_total * sizeof(double));
-    memcpy(transformation_parameters, mxGetPr(mx_transformation_parameters), 12 * n_particles * (n_iterations_onetoall + 1) * sizeof(double));    
+    memcpy(transformation_parameters, mxGetPr(mx_transformation_parameters), 16 * n_particles * (n_iterations_onetoall + 1) * sizeof(double));    
 
     // mcc_fuse_particles_3dTerminate();
 
