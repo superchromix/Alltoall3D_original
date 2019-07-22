@@ -51,28 +51,6 @@ function [transformed_coordinates_x, transformed_coordinates_y, transformed_coor
         symmetry_order,...
         outlier_threshold)
 
-%% check input parameters
-if nargin < 13
-    outlier_threshold = 1;
-    if nargin < 12
-        symmetry_order = 0;
-        if nargin < 11
-            n_iterations_one2all = 10;
-            if nargin < 10
-                n_iterations_all2all = 1;
-                if nargin < 9
-                    averaging_channel_id = 0;
-                    if nargin == 8
-                        channel_ids(:) = 0;
-                    elseif nargin < 8
-                        channel_ids = zeros(numel(coordinates_x),1);
-                    end
-                end
-            end
-        end
-    end
-end
-
 %% GPU flags
 USE_GPU_EXPDIST = true;
 USE_GPU_GAUSSTRANSFORM = true;
