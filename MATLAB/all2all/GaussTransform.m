@@ -32,20 +32,15 @@
 % Revision: 121 
 % Modified: Hamidreza Heydarian, 2017
 
-function [f,g] = GaussTransform(A, B, scale)	
+function [f,g] = GaussTransform(A, B, scale, USE_GPU)	
 
     % run GPU version if it exists otherwise fall back to CPU version
-    if exist('mex_gausstransform','file') && gpuDeviceCount > 0
+    if USE_GPU
         [f,g] = mex_gausstransform(A',B',scale);
         g = g';
-    elseif exist('mex_gausstransform_cpu','file')
-        [f,g] = mex_gausstransform_cpu(A',B',scale);
-        g = g';
     else
-        message = ['No compiled modules found for GaussTransform.\n' ...
-            'Please run make in the top-level directory first.'];
-        message_id = 'MATLAB:MEXNotFound';
-        error (message_id, message);    
+        [f,g] = mex_gausstransform_cpu(A',B',scale);
+        g = g';   
     end
     
 end

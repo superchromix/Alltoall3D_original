@@ -30,7 +30,7 @@
 %
 % Hamidreza Heydarian, Oct 2017.
 
-function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, mean_precision, symmetry_order)
+function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST)
 
 %     disp('Bootstapping is started  !');
     
@@ -67,7 +67,7 @@ function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, me
 %             end
             M = Particles{1,i};
             [curWeight, S] = delParticle3D(Particles, initParticle, i, weight);
-            [parameter{j,i}, ~, ~] = pairFitting3D_parallel(M, S, curWeight, scale(j), j);
+            [parameter{j,i}, ~, ~] = pairFitting3D_parallel(M, S, curWeight, scale(j), j, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
 
             if nargin > 6 && symmetry_order > 0
                 % with 8-fold symmetry assumption of NPC

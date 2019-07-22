@@ -73,6 +73,49 @@ if nargin < 13
     end
 end
 
+%% GPU flags
+USE_GPU_EXPDIST = true;
+USE_GPU_GAUSSTRANSFORM = true;
+
+if gpuDeviceCount <= 0
+    USE_GPU_GAUSSTRANSFORM = false;
+    USE_GPU_EXPDIST = false;
+end
+
+if USE_GPU_GAUSSTRANSFORM 
+    if ~exist('mex_gausstransform','file')
+        USE_GPU_GAUSSTRANSFORM = false;
+    end
+end
+    
+if USE_GPU_EXPDIST 
+    if ~exist('mex_expdist','file')
+        USE_GPU_EXPDIST = false;
+    end
+end
+
+if ~USE_GPU_GAUSSTRANSFORM
+    if ~exist('mex_gausstransform_cpu','file')
+        message = 'No compiled modules found for GaussTransform.\n';
+        message_id = 'MATLAB:MEXNotFound';
+        error (message_id, message);
+    end
+    fprintf('running CPU version of gausstransform\n')
+else
+    fprintf('running GPU version of gausstransform\n')
+end
+
+if ~USE_GPU_EXPDIST 
+    if ~exist('mex_expdist_cpu','file')
+        message = 'No compiled modules found for ExpDist.\n';
+        message_id = 'MATLAB:MEXNotFound';
+        error (message_id, message);
+    end
+    fprintf('running CPU version of expdist\n')
+else
+    fprintf('running GPU version of expdist\n')
+end
+
 %% setting indicies of the first localization of each particle
 particle_beginnings = ones(n_particles,1);
 for i = 2:n_particles
@@ -104,7 +147,7 @@ for i=1:n_particles-1
         coordinates_j = [coordinates_x(indices_j), coordinates_y(indices_j), coordinates_z(indices_j)];
         precision_j = [precision_xy(indices_j), precision_z(indices_j)];
         
-        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j, precision_i, precision_j, n_iterations_all2all);
+        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j, precision_i, precision_j, n_iterations_all2all, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
         
         all2all_matrix{i,j}.ids = [i; j];
     end
@@ -187,7 +230,7 @@ fprintf([' ' num2str(toc(t)) ' s\n']);
 %% performing the one2all registration
 pprint('one2all registration ',45);
 t = tic;
-tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_ids == averaging_channel_id,:), mean_precision, symmetry_order);
+tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_ids == averaging_channel_id,:), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
 transformed_coordinates(channel_ids == averaging_channel_id,:) = tc{end};
 fprintf([' ' num2str(toc(t)) ' s\n']);
 
