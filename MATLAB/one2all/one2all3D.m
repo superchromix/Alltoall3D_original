@@ -30,11 +30,11 @@
 %
 % Hamidreza Heydarian, Oct 2017.
 
-function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST)
+function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, gauss_transform_scale, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST)
 
 %     disp('Bootstapping is started  !');
     
-    [density] = visualizeSMLM3D(sup, mean_precision, 0);
+    [density] = visualizeSMLM3D(sup, gauss_transform_scale, 0);
     weight = density/max(density);
 
     initParticle.points = [];
@@ -90,7 +90,7 @@ function [ superParticle, MT] = one2all3D(Particles, iter, oldM, outdir, sup, me
 %         disp(['iter #' num2str(j) '... done in ' num2str(a) ' seconds']); 
         superParticle{j+1} = tmpParticle.points; 
         initParticle = tmpParticle;
-        [density] = visualizeSMLM3D(superParticle{j+1}, mean_precision, 0); % def=0.05
+        [density] = visualizeSMLM3D(superParticle{j+1}, gauss_transform_scale, 0); % def=0.05
         weight = density/max(density);
     
     end

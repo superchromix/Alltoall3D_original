@@ -11,7 +11,7 @@
 %       coordinates_z: z coordinates of each localization
 %       precision_xy: localization uncertainties in xy for each localization
 %       precision_z: localization uncertainties in z for each localization
-%       mean_precision: 
+%       gauss_transform_scale: 
 %       channel_ids: the channel ids of each localization (optional,
 %                    default values are 0)
 %       averaging_channel_id: channel_id of the channel the fusion is based
@@ -43,7 +43,7 @@ function [transformed_coordinates_x, transformed_coordinates_y, transformed_coor
         coordinates_z,...
         precision_xy,...
         precision_z,...
-        mean_precision,...
+        gauss_transform_scale,...
         channel_ids,...
         averaging_channel_id,...
         n_iterations_all2all,...
@@ -135,7 +135,7 @@ for i=1:n_particles-1
     end
     
     parfor j=i+1:n_particles
-        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j{j}, precision_i, precision_j{j}, n_iterations_all2all, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
+        all2all_matrix{i,j}.parameters = all2all3Dn(coordinates_i, coordinates_j{j}, precision_i, precision_j{j}, n_iterations_all2all, gauss_transform_scale, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
         all2all_matrix{i,j}.ids = [i; j];
     end
     
@@ -219,7 +219,7 @@ fprintf([' ' num2str(toc(t)) ' s\n']);
 %% performing the one2all registration
 pprint('one2all registration ',45);
 t = tic;
-tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_filter,:,1), mean_precision, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
+tc = one2all3D(transformed_particles, n_iterations_one2all, [], '.', transformed_coordinates(channel_filter,:,1), gauss_transform_scale, symmetry_order, USE_GPU_GAUSSTRANSFORM, USE_GPU_EXPDIST);
 transformed_coordinates(channel_filter,:,:) = reshape(cell2mat(tc),[],3,n_iterations_one2all+1);
 fprintf([' ' num2str(toc(t)) ' s\n']);
 
