@@ -71,6 +71,35 @@ Test the build by running the example.
 > cd BUILD_DIRECTORY/c_interface/examples<br>
 > ./example_fuse_particles_3d
 
+Here is an example script, showing the full sequence of commands used to build and run the package.  The paths in the example script need to be changed, as described above, in order for this to work on any particular machine.
+
+```
+echo "************ Go to source directory ************"
+cd ~/Sources/GitHub
+
+echo "************ Clone repository ************"
+git clone https://github.com/berndrieger/alltoall3D.git --recursive
+
+echo "************ Go to build directory ************"
+cd ~/Build/alltoall3D
+
+echo "************ Configure CMake ************"
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_C_COMPILER=gcc-5 -DCUB_ROOT_DIR=~/Sources/cub-1.8.0 ~/Sources/GitHub/alltoall3D/
+
+echo "************ Build ************"
+##make
+
+echo "************ Set linker search paths ************"
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/MATLAB/R2017b/runtime/glnxa64:/usr/local/MATLAB/R2017b/bin/glnxa64:/usr/local/MATLAB/R2017b/sys/os/glnxa64:/usr/local/MATLAB/R2017b/sys/opengl/lib/glnxa64:/home/aprzyby/Build/alltoall3D/c_interface:/home/aprzyby/Build/alltoall3D/mex
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+
+echo "************ Go to example directory ************"
+cd ~/Build/alltoall3D/c_interface/examples
+
+echo "************ Execute example ************"
+./example_fuse_particles_3d
+```
+
 > virtualenv test<br>
 > source test/bin/activate<br>
 > pip install numpy<br>
