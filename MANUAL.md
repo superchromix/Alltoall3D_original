@@ -1,4 +1,4 @@
-# 3Dalltoall
+# alltoall3D
 
 This code is created for a Windows or Linux environment. The main code is written in MATLAB and some of the compute-intensive kernels have been written in CUDA and C++. The Matlab code gets compiled into a library using
 the [Matlab compiler](https://www.mathworks.com/products/compiler.html), which can be passed to anyone without
@@ -18,7 +18,7 @@ For the Python packaging, a Python environment with some basic Python packages (
 
 The Git repository uses submodules. Include them in a _git clone_ action using the _--recursive_ option.
 
-> git clone https://github.com/berndrieger/3Dalltoall.git --recursive
+> git clone https://github.com/berndrieger/alltoall3D.git --recursive
 
 In the following
 
@@ -61,7 +61,7 @@ Then build the project
 
 To use the mex files in Matlab and to use the C interface library the library paths have to be adapted
 
-> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MATLAB_PATH/runtime/glnxa64:MATLAB_PATH/bin/glnxa64:MATLAB_PATH/sys/os/glnxa64:MATLAB_PATH/sys/opengl/lib/glnxa64:BUILD_DIRECTORY/c_interface<br>
+> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MATLAB_PATH/runtime/glnxa64:MATLAB_PATH/bin/glnxa64:MATLAB_PATH/sys/os/glnxa64:MATLAB_PATH/sys/opengl/lib/glnxa64:BUILD_DIRECTORY/c_interface:BUILD_DIRECTORY/mex<br>
 > export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
 where MATLAB_PATH is the root path of the installed MATLAB, e.g. "/usr/local/MATLAB/R2017b".
