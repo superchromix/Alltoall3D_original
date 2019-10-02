@@ -7,10 +7,7 @@ by the included Python package.
 
 ## Requirements
 
-The build framework requires CMake (minimum version 3.13.3).
-If the GPU shall be used, an installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (minimum version 8) and the [CUB library](https://nvlabs.github.io/cub/) (minimum version 1.8.0) is required.
-Matlab must be installed (tested on Windows with version 2018b and on Linux with version 2017b).
-For the Python packaging, a Python environment with some basic Python packages (setuptools, python-wheel) must be available.
+Building the Alltoall3d package from source requires Matlab tested on Windows with version 2018b and on Linux with version 2017b).  The build framework also requires CMake minimum version 3.13.3).  Building on Windows requires Microsoft Visual Studio (minimum version 2013).  If the GPU shall be used, an installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (minimum version 8) and the [CUB library](https://nvlabs.github.io/cub/) (minimum version 1.8.0) are required.  For building the Python binding, a Python environment with some basic Python packages (setuptools, python-wheel) must be available.
 
 ## Build instructions
 
