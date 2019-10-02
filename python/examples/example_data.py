@@ -3074,5 +3074,5 @@ channel_ids =np.array([
     0
 ], dtype=np.int32)
 
-weights_xy = np.ones((764,1), dtype=np.double)
-weights_z = np.ones((764,1), dtype=np.double)
+precision_xy = np.ones((764,1), dtype=np.double)
+precision_z = np.ones((764,1), dtype=np.double)

@@ -25,12 +25,30 @@ lib = cdll.LoadLibrary(lib_path)
 # fuse_particles_3d function in the dll
 func = lib.fuse_particles_3d
 func.restype = c_int32
-func.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double), c_int32, POINTER(c_int32),
-                 POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double),
-                 POINTER(c_int32), c_int32, c_int32, c_int32, c_int32, c_double]
+func.argtypes = [
+    POINTER(c_double),  # transformed_coordinates_x
+    POINTER(c_double),  # transformed_coordinates_y
+    POINTER(c_double),  # transformed_coordinates_z
+    POINTER(c_double),  # transformation_parameters
+    c_int32,  # number_particles
+    POINTER(c_int32),  # localizations_per_particle
+    POINTER(c_double),  # coordinates_x
+    POINTER(c_double),  # coordinates_y
+    POINTER(c_double),  # coordinates_z
+    POINTER(c_double),  # precision_xy
+    POINTER(c_double),  # precision_z
+    c_double,  # gauss_transform_scale
+    POINTER(c_int32),  # channel_ids
+    c_int32,  # averaging_channel_id
+    c_int32,  # number_iterations_all2all
+    c_int32,  # number_iterations_one2all
+    c_int32,  # symmetry_order
+    c_double  # outlier_threshold
+]
 
-def fuse_particles_3d(localizations_per_particle, coordinates_x, coordinates_y, coordinates_z, weights_xy, weights_z,
-                      channel_ids=None, averaging_channel_id=0, number_iterations_all2all=1, number_iterations_one2all=10,
+
+def fuse_particles_3d(localizations_per_particle, coordinates_x, coordinates_y, coordinates_z, precision_xy, precision_z,
+                      gauss_transform_scale, channel_ids=None, averaging_channel_id=0, number_iterations_all2all=1, number_iterations_one2all=10,
                       symmetry_order=0, outlier_threshold=1):
     """
 
@@ -45,14 +63,15 @@ def fuse_particles_3d(localizations_per_particle, coordinates_x, coordinates_y, 
     if channel_ids is None:
         channel_ids = np.zeros(d, dtype=np.int32)
 
-    if any([not x.flags.c_contiguous for x in [coordinates_x, coordinates_y, coordinates_z, weights_xy, weights_z, channel_ids]]):
+    if any([not x.flags.c_contiguous for x in [coordinates_x, coordinates_y, coordinates_z, precision_xy, precision_z, channel_ids]]):
         raise RuntimeError('Memory layout of data arrays mismatch')
 
     # pre-allocate output variables
+    d = (number_localizations * (number_iterations_one2all + 1),)
     transformed_coordinates_x = np.zeros(d, dtype=np.double)
     transformed_coordinates_y = np.zeros(d, dtype=np.double)
     transformed_coordinates_z = np.zeros(d, dtype=np.double)
-    transformation_parameters = np.zeros((12*number_particles,), dtype=np.double)
+    transformation_parameters = np.zeros((16 * number_particles * (number_iterations_one2all + 1), ), dtype=np.double)
 
     # call into the library
     status = func(
@@ -65,14 +84,15 @@ def fuse_particles_3d(localizations_per_particle, coordinates_x, coordinates_y, 
         coordinates_x.ctypes.data_as(func.argtypes[6]),
         coordinates_y.ctypes.data_as(func.argtypes[7]),
         coordinates_z.ctypes.data_as(func.argtypes[8]),
-        weights_xy.ctypes.data_as(func.argtypes[9]),
-        weights_z.ctypes.data_as(func.argtypes[10]),
-        channel_ids.ctypes.data_as(func.argtypes[11]),
-        func.argtypes[12](averaging_channel_id),
-        func.argtypes[13](number_iterations_all2all),
-        func.argtypes[14](number_iterations_one2all),
-        func.argtypes[15](symmetry_order),
-        func.argtypes[16](outlier_threshold)
+        precision_xy.ctypes.data_as(func.argtypes[9]),
+        precision_z.ctypes.data_as(func.argtypes[10]),
+        func.argtypes[11](gauss_transform_scale),
+        channel_ids.ctypes.data_as(func.argtypes[12]),
+        func.argtypes[13](averaging_channel_id),
+        func.argtypes[14](number_iterations_all2all),
+        func.argtypes[15](number_iterations_one2all),
+        func.argtypes[16](symmetry_order),
+        func.argtypes[17](outlier_threshold)
     )
 
     # check status

@@ -11,7 +11,7 @@
 %       coordinates_z: z coordinates of each localization
 %       precision_xy: localization uncertainties in xy for each localization
 %       precision_z: localization uncertainties in z for each localization
-%       gauss_transform_scale: 
+%       gauss_transform_scale: ??
 %       channel_ids: the channel ids of each localization (optional,
 %                    default values are 0)
 %       averaging_channel_id: channel_id of the channel the fusion is based

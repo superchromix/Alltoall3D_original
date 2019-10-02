@@ -12,5 +12,5 @@ if __name__ == '__main__':
 
     # call fuse particles
     transformed_coordinates_x, transformed_coordinates_y, transformed_coordinates_z, transformation_parameters = fp.fuse_particles_3d(
-        d.localizations_per_particle, d.coordinates_x, d.coordinates_y, d.coordinates_z, d.weights_xy, d.weights_z, d.channel_ids,
-        number_iterations_one2all=2, symmetry_order=8)
+        d.localizations_per_particle, d.coordinates_x, d.coordinates_y, d.coordinates_z, d.precision_xy, d.precision_z, 0.1, d.channel_ids,
+        0, 1, 2, 0, 20)
