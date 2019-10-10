@@ -5,7 +5,7 @@ the [Matlab compiler](https://www.mathworks.com/products/compiler.html), which c
 the need to acquire a Matlab license. The compiled Matlab code is accessed from a C interface, which is used
 by the included Python package.
 
-## Requirements
+## Requirements  
 
 The build framework requires CMake.
 If the GPU shall be used, a CUDA compiler and libraries and the [CUB library](https://nvlabs.github.io/cub/).
